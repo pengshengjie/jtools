@@ -43,7 +43,8 @@
         "title": "jtools",
         "width": 1200,
         "height": 800,
-
+        "center": true,
+        "alwaysOnTop": true,
         "decorations": false,
         "transparent": true,
         "x": 600,

@@ -26,3 +26,39 @@
 input {
   /* background-color: #fff !important; */
 }
+
+.flex {
+  display: flex;
+}
+
+.direction-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pr-10 {
+  padding-right: 10px;
+}
+
+.underline {
+  text-decoration: underline;
+}
+
+.text-10 {
+  font-size: 10px;
+}
+
+.gray {
+  color: gray;
+}
+
+.high-light {
+  color: rgb(255, 80, 83);
+}

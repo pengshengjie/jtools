@@ -1,92 +1,207 @@
 import { useEffect, useRef, useState } from "react";
-import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/tauri";
 import "./App.css";
-import data from './configdata'
-import { AutoComplete, Input } from 'antd'
-import { open } from '@tauri-apps/api/shell';
+// import data from "./configdata";
+import { AutoComplete, Input, InputRef } from "antd";
+import { open } from "@tauri-apps/api/shell";
+import goole from "./assets/goole.svg";
+const OperaType = {
+  URL_TYPE: "URL_TYPE",
+  TRANSFORM_ENGLISH: "TRANSFORM_ENGLISH",
+  TRANSFORM_CHINESE: "TRANSFORM_CHINESE",
+};
 
-function formatData(data) {
+function formatData(data, path = "") {
   return data.reduce((pre, val) => {
-
-    if(val.type === 'folder' && Array.isArray(val.children)) {
-      return [...pre, ...formatData(val.children)]
-    }else if(val.type === 'url') {
-      return [...pre, {
-        value: val.name,
-        url: val.url
-      }]
+    if (val.type === "folder" && Array.isArray(val.children)) {
+      return [...pre, ...formatData(val.children, path + "/" + val.name)];
+    } else if (val.type === "url") {
+      return [
+        ...pre,
+        {
+          type: OperaType.URL_TYPE,
+          value: val.name,
+          url: val.url,
+          path: path,
+        },
+      ];
     }
-
-    return pre
-  }, [])
+    return pre;
+  }, []);
 }
 
+const execOpera = (option) => {
+  switch (option.type) {
+    case OperaType.URL_TYPE:
+      open(option.url);
+      break;
+    case OperaType.TRANSFORM_ENGLISH:
+      open(
+        `https://translate.google.com/?hl=zh-CN&sl=zh-CN&tl=en&text=${encodeURIComponent(
+          option.keyword
+        )}&op=translate`
+      );
+      break;
+    case OperaType.TRANSFORM_CHINESE:
+      open(
+        `https://translate.google.com/?sl=en&tl=zh-CN&text=${encodeURIComponent(
+          option.keyword
+        )}&op=translate&hl=zh-CN`
+      );
+      break;
 
-console.log(formatData(data.roots.bookmark_bar.children))
-
-const resData = formatData(data.roots.bookmark_bar.children);
-
+    default:
+      break;
+  }
+};
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
-  const [value, onChange] = useState("")
-  const ref = useRef();
+  const [value, onChange] = useState("");
+  const ref = useRef<InputRef>(null);
   const [options, setOptions] = useState([]);
-  const [update, setUpdate] = useState({})
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    // setGreetMsg(await invoke("greet", { name }));
-  }
+  const resDataRef = useRef([]);
 
-  const onSearch = (text) => {
+  const renderOptions = (options, value) => {
 
-  }
+    return options.map((item) => {
+      let label;
+      switch (item.type) {
+        case OperaType.URL_TYPE:
+          label = (
+            <div className="flex">
+              <div className="center pr-10">
+                <img width={20} height={20} src={goole} alt="google" />
+              </div>
+              <div className="direction-column">
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: value
+                      ? item.value.replace(
+                          new RegExp(value, "gi"),
+                          (a) => `<span class="high-light">${a}</span>`
+                        )
+                      : item.value,
+                  }}
+                ></div>
+                <div className="underline text-10 gray">{item.url}</div>
+              </div>
+            </div>
+          );
+          break;
+        case OperaType.URL_TYPE:
+          break;
 
-  useEffect(() => {
-    if(value === "") {
-      setOptions([])
-      return
-    }
-    const ops = resData.filter(item => item.value.toLowerCase().includes(value.toLowerCase()))
-
-    setOptions(ops)
-  }, [value])
-
-  useEffect(() => {
-    console.log(ref.current);
-    const r = document.getElementsByTagName('input')[0];
-    ref.current.input.focus = () => {
-      console.log(111);
-      
-      ref.current.input.onblur = () => {
-        ref.current.input.onblur = null
-        console.log('222', );
-        invoke('minimize')
+        default:
+          label = options.value;
+          break;
       }
-    }
 
-  }, [])
+      return {
+        ...item,
+        label,
+      };
+    });
+  };
+
+  useEffect(() => {
+    const trimValue = value.trim().toLowerCase();
+    if (trimValue === "") {
+      // setOptions([]);
+      // return;
+    } else if (trimValue.startsWith("f ") || trimValue.startsWith("fc ")) {
+      setOptions([
+        {
+          type: OperaType.TRANSFORM_CHINESE,
+          value: "谷歌翻译 翻译中文",
+          keyword: value.trim().slice(2),
+        },
+      ]);
+      return;
+    } else if (trimValue.startsWith("fe ")) {
+      setOptions([
+        {
+          type: OperaType.TRANSFORM_ENGLISH,
+          value: "谷歌翻译 翻译英语",
+          keyword: value.trim().slice(2),
+        },
+      ]);
+      return;
+    } else if (trimValue.startsWith("g ")) {
+      const ops = resDataRef.current.filter((item) => {
+        return (
+          item.path.includes("官方文档") &&
+          item.value.toLowerCase().includes(trimValue.slice(2))
+        );
+      });
+      setOptions(ops);
+      return;
+    }
+    const ops = resDataRef.current.filter((item) =>
+      item.value.toLowerCase().includes(trimValue)
+    );
+
+    setOptions(ops);
+  }, [value]);
+
+  useEffect(() => {
+    ref.current!.input!.focus = () => {
+      ref.current!.input!.onblur = () => {
+        ref.current!.input!.onblur = null;
+        invoke("minimize");
+        onChange("");
+      };
+    };
+
+    window.__resetInputValue = () => {
+      onChange("");
+    };
+    (async () => {
+      const s = await invoke("get_apps") as string;
+      console.log(s.split(' ').filter(Boolean))
+      document.body.appendChild(document.createTextNode(await invoke("get_apps")))
+      // resDataRef.current = formatData(data.roots.bookmark_bar.children)
+      const bookmark = await invoke("get_bookmark");
+      const bookmarkObj = JSON.parse(bookmark as string);
+
+      resDataRef.current = formatData(bookmarkObj.roots.bookmark_bar.children);
+    })();
+  }, []);
 
   const onSelect = async (v) => {
-    console.log(v)
-    onChange("")
-    open(v.url)
-    await invoke('minimize')
-  }
+    onChange("");
+    execOpera(v);
+    await invoke("minimize");
+  };
+
+  const onSearch = () => {
+  };
+
+  const onEnter = (e) => {
+    if (e.key === "Enter") {
+      if (options[0]) {
+      }
+    }
+  };
 
   return (
-    <div className="container" >
+    <div className="container">
       <AutoComplete
-        key={update}
+        open={true}
+        onKeyDown={onEnter}
         value={value}
-        onChange={onChange}
+        onChange={(v) => onChange(v)}
         onSelect={(_, v) => onSelect(v)}
-        onSearch={(text) => onSearch(text)}
-        options={options}
+        options={renderOptions(options, value)}
+        onSearch={onSearch}
         size="large"
-    children={<Input size="large" ref={ref} style={{backgroundColor: '#fff'}} />}
+        children={
+          <Input
+            onKeyDown={onEnter}
+            size="large"
+            ref={ref}
+            style={{ backgroundColor: "#fff" }}
+          />
+        }
       />
     </div>
   );
