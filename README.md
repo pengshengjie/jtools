@@ -20,7 +20,8 @@
 
 ## 快速查找官方文档
 
-![image](https://github.com/pengshengjie/jtools/assets/117100743/4eb90a1a-d1b2-4e42-bf7d-ec7ca2a20fcf)
+![image](https://github.com/pengshengjie/jtools/assets/117100743/780e7984-0996-47a7-949d-27c1dbbb66a5)
+
 
 ## 翻译功能
 
