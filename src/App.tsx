@@ -86,6 +86,7 @@ function App() {
       let label;
       switch (item.type) {
         case OperaType.URL_TYPE:
+          const keywords = value.trim().startsWith('g ') ? value.trim().slice(2) : value.trim()
           label = (
             <div className="flex">
               <div className="center pr-10">
@@ -94,9 +95,9 @@ function App() {
               <div className="direction-column">
                 <div
                   dangerouslySetInnerHTML={{
-                    __html: value
+                    __html: keywords
                       ? item.value.replace(
-                          new RegExp(value, "gi"),
+                          new RegExp(keywords, "gi"),
                           (a: string) => `<span class="high-light">${a}</span>`
                         )
                       : item.value,
