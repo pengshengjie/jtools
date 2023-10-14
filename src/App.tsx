@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import "./App.css";
-// import data from "./configdata";
 import { AutoComplete, Input, InputRef } from "antd";
 import { open } from "@tauri-apps/api/shell";
 import goole from "./assets/goole.svg";
@@ -11,15 +10,36 @@ const OperaType = {
   TRANSFORM_CHINESE: "TRANSFORM_CHINESE",
 };
 
-function formatData(data, path = "") {
-  return data.reduce((pre, val) => {
+type MarkBook = {
+  date_added: string;
+  date_last_used: string;
+  date_modified: string;
+  guid: string;
+  id: string;
+  name: string;
+  type: "folder" | "url";
+  children?: MarkBook[]
+  url: string;
+};
+
+type OptionType = {
+  type: keyof typeof OperaType;
+  value: string;
+  keyword?: string;
+  label?: ReactNode;
+  url?: string;
+  path?: string;
+}
+
+function formatData(data: MarkBook[], path = ""): OptionType[] {
+  return data.reduce<OptionType[]>((pre: OptionType[], val: MarkBook) => {
     if (val.type === "folder" && Array.isArray(val.children)) {
       return [...pre, ...formatData(val.children, path + "/" + val.name)];
     } else if (val.type === "url") {
       return [
         ...pre,
         {
-          type: OperaType.URL_TYPE,
+          type: OperaType.URL_TYPE as keyof typeof OperaType,
           value: val.name,
           url: val.url,
           path: path,
@@ -30,22 +50,22 @@ function formatData(data, path = "") {
   }, []);
 }
 
-const execOpera = (option) => {
+const execOpera = (option: OptionType) => {
   switch (option.type) {
     case OperaType.URL_TYPE:
-      open(option.url);
+      open(option.url!);
       break;
     case OperaType.TRANSFORM_ENGLISH:
       open(
         `https://translate.google.com/?hl=zh-CN&sl=zh-CN&tl=en&text=${encodeURIComponent(
-          option.keyword
+          option.keyword!
         )}&op=translate`
       );
       break;
     case OperaType.TRANSFORM_CHINESE:
       open(
         `https://translate.google.com/?sl=en&tl=zh-CN&text=${encodeURIComponent(
-          option.keyword
+          option.keyword!
         )}&op=translate&hl=zh-CN`
       );
       break;
@@ -56,13 +76,12 @@ const execOpera = (option) => {
 };
 
 function App() {
-  const [value, onChange] = useState("");
+  const [value, onChange] = useState<string>("");
   const ref = useRef<InputRef>(null);
-  const [options, setOptions] = useState([]);
-  const resDataRef = useRef([]);
+  const [options, setOptions] = useState<OptionType[]>([]);
+  const resDataRef = useRef<OptionType[]>([]);
 
-  const renderOptions = (options, value) => {
-
+  const renderOptions = (options: OptionType[], value: string) => {
     return options.map((item) => {
       let label;
       switch (item.type) {
@@ -78,7 +97,7 @@ function App() {
                     __html: value
                       ? item.value.replace(
                           new RegExp(value, "gi"),
-                          (a) => `<span class="high-light">${a}</span>`
+                          (a: string) => `<span class="high-light">${a}</span>`
                         )
                       : item.value,
                   }}
@@ -92,7 +111,7 @@ function App() {
           break;
 
         default:
-          label = options.value;
+          label = item.value;
           break;
       }
 
@@ -111,7 +130,7 @@ function App() {
     } else if (trimValue.startsWith("f ") || trimValue.startsWith("fc ")) {
       setOptions([
         {
-          type: OperaType.TRANSFORM_CHINESE,
+          type: OperaType.TRANSFORM_CHINESE as keyof typeof OperaType,
           value: "谷歌翻译 翻译中文",
           keyword: value.trim().slice(2),
         },
@@ -120,7 +139,7 @@ function App() {
     } else if (trimValue.startsWith("fe ")) {
       setOptions([
         {
-          type: OperaType.TRANSFORM_ENGLISH,
+          type: OperaType.TRANSFORM_ENGLISH  as keyof typeof OperaType,
           value: "谷歌翻译 翻译英语",
           keyword: value.trim().slice(2),
         },
@@ -129,7 +148,7 @@ function App() {
     } else if (trimValue.startsWith("g ")) {
       const ops = resDataRef.current.filter((item) => {
         return (
-          item.path.includes("官方文档") &&
+          item.path!.includes("官方文档") &&
           item.value.toLowerCase().includes(trimValue.slice(2))
         );
       });
@@ -156,14 +175,16 @@ function App() {
       onChange("");
     };
     (async () => {
-      const s = await invoke("get_apps") as string;
-      console.log(s.split(' ').filter(Boolean))
-      document.body.appendChild(document.createTextNode(await invoke("get_apps")))
+      const s = (await invoke("get_apps")) as string;
+      console.log(s.split(" ").filter(Boolean));
+      document.body.appendChild(
+        document.createTextNode(await invoke("get_apps"))
+      );
       // resDataRef.current = formatData(data.roots.bookmark_bar.children)
       const bookmark = await invoke("get_bookmark");
       const bookmarkObj = JSON.parse(bookmark as string);
 
-      resDataRef.current = formatData(bookmarkObj.roots.bookmark_bar.children);
+      resDataRef.current = formatData(bookmarkObj.roots.bookmark_bar.children as MarkBook[]);
     })();
   }, []);
 
@@ -173,8 +194,7 @@ function App() {
     await invoke("minimize");
   };
 
-  const onSearch = () => {
-  };
+  const onSearch = () => {};
 
   const onEnter = (e) => {
     if (e.key === "Enter") {
