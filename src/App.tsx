@@ -1,9 +1,18 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import "./App.css";
-import { AutoComplete, Input, InputRef } from "antd";
+import { InputRef } from "antd";
+import AutoComplete from 'antd/es/auto-complete'
+import Input from 'antd/es/input'
 import { open } from "@tauri-apps/api/shell";
 import goole from "./assets/goole.svg";
+
+declare global {
+  interface Window {
+    __resetInputValue: () => void
+  }
+}
+
 const OperaType = {
   URL_TYPE: "URL_TYPE",
   TRANSFORM_ENGLISH: "TRANSFORM_ENGLISH",
@@ -189,7 +198,7 @@ function App() {
     })();
   }, []);
 
-  const onSelect = async (v) => {
+  const onSelect = async (v: OptionType) => {
     onChange("");
     execOpera(v);
     await invoke("minimize");
@@ -197,7 +206,7 @@ function App() {
 
   const onSearch = () => {};
 
-  const onEnter = (e) => {
+  const onEnter = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       if (options[0]) {
       }
