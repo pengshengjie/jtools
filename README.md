@@ -2,6 +2,8 @@
 
 基于Tauri构建的程序员桌面效率工具
 
+下载地址: https://raw.githubusercontent.com/pengshengjie/jtools/main/release/jtools.exe
+
 🔥Feature:
   + 快速查找Chrome标签
   + 支持中英翻译
