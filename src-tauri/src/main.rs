@@ -5,7 +5,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::process::{exit, Command};
-use std::str;
+use tauri::{CustomMenuItem, SystemTray, SystemTrayMenu};
+mod menu;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -46,24 +47,24 @@ fn get_apps() -> String {
 #[tauri::command]
 fn minimize(window: tauri::Window) -> Result<(), String> {
     window
-        .minimize()
+        .hide()
         .map_err(|err| format!("failed to minimize window: {}", err))
 }
 
 #[tauri::command]
 fn unsize(window: tauri::Window) -> Result<(), String> {
-    match window.is_minimized() {
-        Ok(true) => {
+    match window.is_visible() {
+        Ok(false) => {
             window
-                .unminimize()
+                .show()
                 .map_err(|err| format!("failed to unminimize window"))?;
             window
                 .set_focus()
                 .map_err(|err| format!("failed to set focus: {}", err))?;
             Ok(())
         }
-        Ok(false) => window
-            .minimize()
+        Ok(true) => window
+            .hide()
             .map_err(|err| format!("failed to unminimize window: {}", err)),
         Err(err) => {
             panic!("Failed to check if window is minimized: {}", err)
@@ -73,13 +74,30 @@ fn unsize(window: tauri::Window) -> Result<(), String> {
 
 fn main() {
     tauri::Builder::default()
-        // .invoke_handler(tauri::generate_handler![greet])
+    .setup(|app| {
+      SystemTray::new()
+      .with_menu(
+        SystemTrayMenu::new()
+          .add_item(CustomMenuItem::new("setting", "设置"))
+          .add_item(CustomMenuItem::new("open", "显示"))
+          .add_item(CustomMenuItem::new("quit", "退出"))
+      )
+      .build(app)?;
+
+    Ok(())
+    })
+    // .system_tray(SystemTray::new().with_menu(
+    //   SystemTrayMenu::new()
+    //     .add_item(CustomMenuItem::new("quit", "Quit"))
+    //     .add_item(CustomMenuItem::new("open", "Open"))
+    // ))
         .invoke_handler(tauri::generate_handler![
             minimize,
             unsize,
             get_bookmark,
             get_apps
         ])
+        // .menu(menu::get_menu())
         // .invoke_handler(tauri::generate_handler![])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

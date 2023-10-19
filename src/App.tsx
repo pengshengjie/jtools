@@ -135,8 +135,8 @@ function App() {
   useEffect(() => {
     const trimValue = value.trim().toLowerCase();
     if (trimValue === "") {
-      // setOptions([]);
-      // return;
+      setOptions([]);
+      return;
     } else if (trimValue.startsWith("f ") || trimValue.startsWith("fc ")) {
       setOptions([
         {
@@ -209,6 +209,9 @@ function App() {
   const onEnter = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       if (options[0]) {
+        onChange("");
+        execOpera(options[0])
+        invoke("minimize");
       }
     }
   };

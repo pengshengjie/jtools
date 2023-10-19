@@ -50,6 +50,11 @@
         "x": 600,
         "y": 200
       }
-    ]
+    ],
+    "systemTray": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
+    }
+
   }
 }
