@@ -49,6 +49,11 @@
         "transparent": true,
         "x": 600,
         "y": 200
+      },
+      {
+        "height": 600,
+        "width": 300,
+        "t"
       }
     ],
     "systemTray": {

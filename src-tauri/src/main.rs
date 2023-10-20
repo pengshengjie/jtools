@@ -7,7 +7,7 @@ use std::io::BufReader;
 use std::process::{exit, Command};
 use tauri::{CustomMenuItem, SystemTray, SystemTrayMenu};
 mod menu;
-
+use tauri_plugin_autostart::MacosLauncher;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn get_bookmark() -> String {
@@ -99,6 +99,7 @@ fn main() {
         ])
         // .menu(menu::get_menu())
         // .invoke_handler(tauri::generate_handler![])
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--flag1", "--flag2"]) /* arbitrary number of args to pass to your app */))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

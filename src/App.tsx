@@ -6,6 +6,7 @@ import AutoComplete from 'antd/es/auto-complete'
 import Input from 'antd/es/input'
 import { open } from "@tauri-apps/api/shell";
 import goole from "./assets/goole.svg";
+import { enable, isEnabled, disable } from "tauri-plugin-autostart-api";
 
 declare global {
   interface Window {
@@ -89,6 +90,7 @@ function App() {
   const ref = useRef<InputRef>(null);
   const [options, setOptions] = useState<OptionType[]>([]);
   const resDataRef = useRef<OptionType[]>([]);
+  const [autoStart, setAutoStart] = useState(false);
 
   const renderOptions = (options: OptionType[], value: string) => {
     return options.map((item) => {
@@ -173,6 +175,14 @@ function App() {
   }, [value]);
 
   useEffect(() => {
+    (async () => {
+      console.log('isEnabled', await isEnabled())
+
+    })();
+  }, [])
+
+
+  useEffect(() => {
     ref.current!.input!.focus = () => {
       ref.current!.input!.onblur = () => {
         ref.current!.input!.onblur = null;
@@ -236,6 +246,18 @@ function App() {
           />
         }
       />
+
+      <div style={{color: 'red'}}>
+        <button onClick={async () =>{
+        enable()
+        const s = await isEnabled()
+        setAutoStart(s)
+      }}>启用</button>
+      <button onClick={async () =>{
+        await disable()
+        const s = await isEnabled()
+        setAutoStart(s)
+      }}>禁用</button>{autoStart ? '启用' : '禁用'}</div>
     </div>
   );
 }
